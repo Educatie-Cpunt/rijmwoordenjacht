@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rijmwoordenjacht</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23FFC83D'/%3E%3Ctext x='16' y='23' font-family='Arial' font-weight='700' font-size='18' text-anchor='middle' fill='%23D3375E'%3ER%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Fredoka:wght@500;600;700&display=swap">
+<style>
+/* Layout: één scherm per stap, groot voor het digibord. Gedichten staan op een schriftblad met kantlijn; rijmletters in de marge. */
+:root{
+  --bg:#E4EEF7; --paper:#FFFFFF; --ink:#1D2940; --muted:#55647E; --line:#C3D8EC; --kantlijn:#EE8E8E;
+  --zon:#FFC83D; --zon-ink:#1D2940; --zon-rand:#D9A21A;
+  --c1:#D3375E; --c2:#1F8455; --c0:#7C8AA3; --opc:#FFFFFF;
+  --chip:#F2F6FB; --rand:#C9D8E8;
+  --display:"Fredoka","Trebuchet MS",system-ui,sans-serif;
+  --tekst:"Andika","Verdana",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1727; --paper:#18233A; --ink:#EEF3FB; --muted:#A3B1C9; --line:#2B3B5C; --kantlijn:#9A4A57;
+  --zon:#FFC83D; --zon-ink:#1D2940; --zon-rand:#B98A12;
+  --c1:#FF7396; --c2:#52D191; --c0:#8D9AB3; --opc:#0F1727;
+  --chip:#1F2C46; --rand:#2E3F60; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0F1727; --paper:#18233A; --ink:#EEF3FB; --muted:#A3B1C9; --line:#2B3B5C; --kantlijn:#9A4A57;
+  --zon:#FFC83D; --zon-ink:#1D2940; --zon-rand:#B98A12;
+  --c1:#FF7396; --c2:#52D191; --c0:#8D9AB3; --opc:#0F1727;
+  --chip:#1F2C46; --rand:#2E3F60; color-scheme:dark }
+
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--tekst);font-size:18px;line-height:1.5}
+.app{max-width:1200px;margin:0 auto;padding-inline:clamp(16px,3vw,40px);padding-block:12px 48px}
+.c1{--kc:var(--c1)} .c2{--kc:var(--c2)} .c0{--kc:var(--c0)}
+
+/* balk */
+.bar{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;padding-block:8px 22px}
+.logo{font-family:var(--display);font-weight:700;font-size:1.55rem;background:none;border:0;color:var(--ink);cursor:pointer;padding:4px 0}
+.logo .a{color:var(--c1)} .logo .b{color:var(--c2)}
+.crumbs{display:flex;gap:4px 8px;flex-wrap:wrap;font-family:var(--display);font-size:.95rem;color:var(--muted);align-items:center}
+.crumbs .nu{color:var(--ink);font-weight:600;background:var(--paper);border-radius:999px;padding:2px 12px}
+.crumbs .pijl{opacity:.5}
+.spacer{flex:1}
+
+/* knoppen */
+.knop{font-family:var(--display);font-weight:600;font-size:1.1rem;border:2px solid var(--rand);background:var(--paper);color:var(--ink);border-radius:14px;padding:.5em 1em;cursor:pointer;min-height:48px;line-height:1.2}
+.knop:hover{border-color:var(--muted)}
+.knop.hoofd{background:var(--zon);color:var(--zon-ink);border-color:var(--zon);font-size:1.3rem;padding:.55em 1.3em;box-shadow:0 4px 0 var(--zon-rand)}
+.knop.hoofd:active{transform:translateY(3px);box-shadow:0 1px 0 var(--zon-rand)}
+.knop.klein{font-size:.95rem;min-height:40px;padding:.35em .8em}
+.knop:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:3px solid var(--zon);outline-offset:3px}
+
+h1{font-family:var(--display);font-weight:700;font-size:clamp(1.8rem,3.6vw,2.7rem);line-height:1.1;margin:0 0 .25em;text-wrap:balance}
+h2{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance}
+.intro{color:var(--muted);font-size:1.2rem;margin:0 0 24px;max-width:62ch}
+.label{font-family:var(--display);font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tip{color:var(--muted);font-size:1rem;margin-top:28px;max-width:70ch}
+
+/* schema-blokjes */
+.schema{display:flex;gap:6px;flex-wrap:wrap}
+.schema span{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:1.2rem;background:var(--kc);color:var(--opc)}
+.schema span.c0{background:transparent;border:2px dashed var(--c0);color:var(--c0)}
+.schema span.tel{background:var(--zon);color:var(--zon-ink)}
+.schema span.vraagt{background:var(--chip);color:var(--muted);border:2px dashed var(--rand)}
+.schema.groot span{width:52px;height:52px;font-size:1.5rem;border-radius:12px}
+
+/* start */
+.vormen{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}
+.vorm{background:var(--paper);border:2px solid var(--rand);border-radius:20px;padding:20px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:12px;font:inherit;color:inherit;transition:transform .15s,border-color .15s}
+.vorm:hover{border-color:var(--zon);transform:translateY(-3px)}
+.vorm h3{font-family:var(--display);font-size:1.5rem;margin:0}
+.vorm p{margin:0;color:var(--muted)}
+
+/* schrift */
+.schrift{position:relative;background:var(--paper);border-radius:6px 18px 18px 6px;padding:26px clamp(18px,4vw,48px) 34px clamp(56px,8vw,96px);font-size:clamp(1.3rem,2.5vw,1.9rem);box-shadow:0 2px 0 var(--rand),0 18px 36px -24px rgba(15,30,60,.45)}
+.schrift::before{content:"";position:absolute;top:0;bottom:0;left:clamp(40px,6vw,74px);width:2px;background:var(--kantlijn)}
+.schrift h2{font-size:1.05em;padding-bottom:.3em}
+.schrift ol{margin:0;padding:0;list-style:none}
+.schrift li{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;min-height:2.1em;padding:.3em 0 .15em;border-bottom:2px solid var(--line);transition:opacity .25s}
+.schrift li.dim{opacity:.22}
+.schrift li.actief .tekst{font-weight:700}
+.tekst{min-width:0;overflow-wrap:anywhere}
+.leeg{color:var(--muted)}
+.rw{border-radius:6px;transition:color .3s,background-color .3s;padding:0 .1em}
+.schrift.toon .rw.c1,.schrift.toon .rw.c2{color:var(--kc);background:color-mix(in srgb,var(--kc) 14%,transparent)}
+.letter{flex:none;width:1.55em;height:1.55em;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:.72em;background:var(--kc);color:var(--opc);opacity:0;transform:scale(.5);transition:opacity .3s,transform .3s}
+.letter.c0{background:transparent;border:2px dashed var(--c0);color:var(--c0)}
+.letter.tel{background:var(--zon);color:var(--zon-ink)}
+.schrift.toon .letter,.letter.zichtbaar{opacity:1;transform:none}
+.schrift.groot{font-size:clamp(1.5rem,3.3vw,2.6rem);max-width:980px;margin:0 auto}
+
+/* voorbeeld */
+.duo{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:860px){.duo{grid-template-columns:minmax(0,1fr)}}
+.paneel{background:var(--paper);border-radius:20px;padding:22px;border:2px solid var(--rand);display:flex;flex-direction:column;gap:16px}
+.paneel h2{font-size:2rem}
+.vraag{font-family:var(--display);font-size:1.35rem;line-height:1.35;margin:0}
+.knoppen{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+
+/* startwoord kiezen */
+.slots{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+.slot{flex:1 1 260px;border:3px solid var(--rand);border-radius:18px;padding:12px 18px;background:var(--paper);cursor:pointer;display:flex;gap:14px;align-items:center;font:inherit;color:inherit;text-align:left;min-height:84px}
+.slot.actief{border-color:var(--kc);box-shadow:0 0 0 4px color-mix(in srgb,var(--kc) 22%,transparent)}
+.slot .letter{opacity:1;transform:none;font-size:1.3rem;width:46px;height:46px}
+.slot .woord{font-family:var(--display);font-size:1.9rem;font-weight:600;line-height:1.1}
+.slot .woord.leeg{font-size:1.2rem;color:var(--muted);font-weight:500}
+.melding{min-height:1.7em;font-family:var(--display);font-size:1.15rem;color:var(--c1);margin:4px 0 10px}
+.woordkeuze{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px}
+.wk{background:var(--paper);border:2px solid var(--rand);border-radius:14px;padding:10px 6px;font-family:var(--display);font-size:1.35rem;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;color:var(--ink)}
+.wk:hover{border-color:var(--zon)}
+.wk .em{font-size:2.1rem;line-height:1.1}
+.wk.gekozen{border-color:var(--kc);background:color-mix(in srgb,var(--kc) 12%,var(--paper))}
+.eigen{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;max-width:640px}
+.veldin{font:inherit;font-size:1.3rem;padding:.45em .7em;border-radius:12px;border:2px solid var(--rand);background:var(--paper);color:var(--ink);min-width:0;flex:1 1 220px}
+.veldin::placeholder{color:var(--muted);opacity:.8}
+
+/* jacht */
+.jachtkop{display:flex;align-items:center;gap:12px 16px;flex-wrap:wrap}
+.klok{font-family:var(--display);font-weight:600;font-size:1.8rem;font-variant-numeric:tabular-nums;background:var(--paper);border-radius:14px;padding:.1em .6em;border:2px solid var(--rand)}
+.klok.loopt{border-color:var(--zon)}
+.klok.op{background:var(--zon);color:var(--zon-ink);border-color:var(--zon)}
+.banner{font-family:var(--display);font-size:1.4rem;background:var(--zon);color:var(--zon-ink);border-radius:16px;padding:.5em .9em;margin-bottom:18px}
+.kolommen{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:20px}
+.kolom{background:var(--paper);border-radius:22px;padding:20px;border:3px solid var(--kc);display:flex;flex-direction:column;gap:14px;min-width:0}
+.startwoord{display:flex;align-items:center;gap:14px;font-family:var(--display);font-weight:700;font-size:clamp(2.4rem,5vw,3.6rem);line-height:1;color:var(--kc)}
+.startwoord .em{font-size:.85em}
+.startwoord .letter{opacity:1;transform:none;font-size:.45em;width:1.6em;height:1.6em;margin-left:auto}
+.jachtform{display:flex;gap:10px;flex-wrap:wrap}
+.kolom .melding{margin:0;min-height:1.4em;font-size:1.05rem;color:var(--muted)}
+.bubbels{display:flex;flex-wrap:wrap;gap:10px;min-height:56px;align-content:flex-start}
+.bubbels .leeg{font-size:1.1rem;align-self:center}
+.bubbel{display:inline-flex;align-items:center;gap:6px;font-family:var(--display);font-weight:600;font-size:1.55rem;padding:.15em .25em .15em .8em;border-radius:999px;background:color-mix(in srgb,var(--kc) 14%,var(--paper));border:2px solid var(--kc);color:var(--ink)}
+.bubbel .rijm{color:var(--kc)}
+.bubbel .x,.vastwoord .x{border:0;background:transparent;color:var(--muted);font-size:1.2rem;width:36px;height:36px;border-radius:50%;cursor:pointer;font-family:var(--display)}
+.bubbel .x:hover,.vastwoord .x:hover{background:var(--chip)}
+.bubbel.twijfel{background:var(--chip);border:2px dashed var(--c0);padding-right:.35em}
+.bubbel.twijfel em{font-style:normal;font-size:.95rem;color:var(--muted);font-weight:500}
+.mini{border:2px solid var(--rand);background:var(--paper);color:var(--ink);border-radius:999px;font-family:var(--display);font-weight:600;font-size:1rem;padding:.15em .7em;cursor:pointer;min-height:36px}
+.mini.ja{border-color:var(--c2);color:var(--c2)}
+@keyframes pop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+.nieuw{animation:pop .45s ease-out}
+.voet{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-top:2px dashed var(--rand);padding-top:12px}
+.teller{font-family:var(--display);font-size:1.15rem;color:var(--muted)}
+.teller b{color:var(--kc);font-size:1.7rem;font-variant-numeric:tabular-nums}
+.hint{border:2px dashed var(--kc);background:transparent;color:var(--kc);border-radius:999px;padding:.15em .8em;font-family:var(--display);font-weight:600;font-size:1.25rem;cursor:pointer;min-height:42px}
+.hints{display:flex;gap:8px;flex-wrap:wrap}
+
+/* schrijven */
+.titelrij{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px;max-width:760px}
+.titelrij label{font-family:var(--display);font-size:1.15rem}
+.bouw{display:flex;flex-direction:column;gap:12px}
+.bouwregel{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:start;background:var(--paper);border-radius:18px;padding:14px 16px;border:2px solid var(--rand)}
+.bouwregel .letter{font-size:1.25rem;width:46px;height:46px;margin-top:4px}
+.bouwregel .veldin{width:100%;font-size:1.55rem}
+.status{font-family:var(--display);font-size:1.05rem;color:var(--muted);margin-top:6px}
+.status.goed{color:var(--kc)}
+.status.goed.c0,.status.goed.tel{color:var(--c2)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.rchip{border:2px solid var(--kc);background:color-mix(in srgb,var(--kc) 12%,var(--paper));color:var(--ink);border-radius:999px;font-family:var(--display);font-weight:600;font-size:1.35rem;padding:.1em .9em;cursor:pointer;min-height:46px}
+.rchip:disabled{opacity:.35;text-decoration:line-through;cursor:not-allowed}
+.werkwijze{background:var(--paper);border:2px dashed var(--zon-rand);border-radius:16px;padding:12px 20px;margin-bottom:18px;max-width:760px}
+.werkwijze ol{margin:.3em 0 0;padding-left:1.3em}
+.werkwijze b{font-family:var(--display)}
+.opdracht{margin:6px 0 0;font-family:var(--display);font-size:1.2rem}
+.zinrij{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.bouwregel .zinrij .veldin{flex:1 1 260px;width:auto}
+.vastwoord{display:inline-flex;align-items:center;gap:2px;font-family:var(--display);font-weight:700;font-size:1.7rem;line-height:1.2;color:var(--kc);background:color-mix(in srgb,var(--kc) 14%,var(--paper));border:2px solid var(--kc);border-radius:12px;padding:.05em .15em .05em .6em}
+.starters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;color:var(--muted);font-family:var(--display)}
+.sbtn{border:2px solid var(--rand);background:var(--chip);color:var(--ink);border-radius:999px;font-family:var(--display);font-size:1.05rem;padding:.1em .8em;cursor:pointer;min-height:40px}
+.eigen.klein{margin-top:10px;max-width:460px}
+.eigen.klein .veldin{font-size:1.1rem;flex-basis:180px}
+
+.verder{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:28px}
+.lezen{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:22px}
+
+@media (max-width:520px){
+  body{font-size:16px}
+  .schrift{padding-left:52px}
+  .schrift::before{left:38px}
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="bar" id="bar"></header>
+  <main id="main"></main>
+</div>
+
+<script>
+const FORMS = [
+  {id:'paartjes', naam:'Rijmpaartjes', schema:'AABB', kort:'Regel 1 en 2 rijmen. Regel 3 en 4 ook.',
+   uitleg:'Twee regels die na elkaar komen, rijmen op elkaar. Daarna komen er weer twee.',
+   titel:'De muis', regels:['Er woonde eens een kleine muis','in een heel gezellig huis.','Hij at er kaas en ook een peer,','en morgen doet hij dat weer.']},
+  {id:'tweevier', naam:'Twee en vier', schema:'ABCB', kort:'Alleen regel 2 en 4 rijmen.',
+   uitleg:'Regel 1 en 3 rijmen nergens op. Alleen regel 2 en regel 4 rijmen. Veel liedjes werken zo.',
+   titel:"Oma's jas", regels:['Ik heb een jas van oma,','die is me veel te groot.','Als het hard waait op straat,','dan zeil ik als een boot!']},
+  {id:'omenom', naam:'Om en om', schema:'ABAB', kort:'Regel 1 en 3 rijmen. Regel 2 en 4 ook.',
+   uitleg:'De rijmwoorden wisselen elkaar af: eerst A, dan B, dan weer A en weer B.',
+   titel:'Varen', regels:['Mijn opa heeft een rode boot,','daar varen wij mee naar zee.','De golven zijn ontzettend groot,','maar opa neemt me altijd mee.']},
+  {id:'knuffel', naam:'Knuffelrijm', schema:'ABBA', kort:'De buitenste regels rijmen, de middelste ook.',
+   uitleg:'Regel 1 en 4 rijmen. Ze staan om regel 2 en 3 heen, alsof ze die knuffelen.',
+   titel:'De spin', regels:['Op een tak zit een kleine spin.','Ze weeft een web van zilverdraad,','ze werkt van vroeg tot heel erg laat…','en hap! Daar zit een vlieg al in!']},
+  {id:'vijf', naam:'Versje van vijf', schema:'AABBA', kort:'Regel 1, 2 en 5 rijmen. Regel 3 en 4 ook.',
+   uitleg:'Een grappig versje van vijf regels. Regel 3 en 4 zijn korter. De laatste regel rijmt weer op het begin.',
+   titel:'Poes met de hik', regels:['Er was eens een poes met een strik,','die had elke ochtend de hik.','Ze dronk water, heel gauw,','en ze riep toen: "Miauw!"','Weg was de hik, in een tik!']},
+  {id:'elfje', naam:'Elfje', schema:'', tellen:[1,2,3,4,1], kort:'Elf woorden, en het rijmt niet.',
+   uitleg:'Een elfje heeft elf woorden op vijf regels: 1, 2, 3, 4 en dan weer 1 woord. Een gedicht hoeft dus niet altijd te rijmen!',
+   titel:'Herfst', regels:['Herfst','Bladeren dwarrelen','Ik spring erin','Het ritselt onder mij','Heerlijk!'],
+   tips:['1 woord: een ding, dier of kleur','2 woorden: wat doet het?','3 woorden: waar is het, of wat doe jij?','4 woorden: vertel er meer over','1 woord: een slotwoord']}
+];
+
+const BANK = [
+  {w:'muis',e:'🐭',r:['huis','thuis','kluis','luis','ruis','buis','sluis']},
+  {w:'kat',e:'🐱',r:['rat','nat','gat','schat','plat','wat','spat','stad']},
+  {w:'maan',e:'🌙',r:['baan','gaan','staan','kraan','zwaan','haan','banaan','slaan']},
+  {w:'beer',e:'🐻',r:['peer','keer','meer','veer','weer','neer','leer']},
+  {w:'hond',e:'🐶',r:['rond','mond','grond','stond','vond']},
+  {w:'zon',e:'☀️',r:['ton','kon','won','bon','begon','bron']},
+  {w:'jas',e:'🧥',r:['das','gras','tas','was','plas','glas']},
+  {w:'koek',e:'🍪',r:['boek','hoek','zoek','broek','doek']},
+  {w:'kip',e:'🐔',r:['lip','stip','schip','tip','wip']},
+  {w:'slak',e:'🐌',r:['dak','zak','tak','pak','hak','lak']},
+  {w:'trein',e:'🚂',r:['klein','plein','fijn','lijn','mijn','zijn','pijn']},
+  {w:'bal',e:'⚽',r:['val','stal','kwal','hal','mal']},
+  {w:'vis',e:'🐟',r:['mis','fris','sis','is']},
+  {w:'boom',e:'🌳',r:['droom','room','stroom','oom']},
+  {w:'spin',e:'🕷️',r:['in','kin','zin','win','begin']},
+  {w:'feest',e:'🎉',r:['beest','geest','meest','geweest']},
+  {w:'pet',e:'🧢',r:['net','zet','met','bed','opgelet']},
+  {w:'snoep',e:'🍬',r:['soep','groep','roep','stoep']},
+  {w:'sneeuw',e:'❄️',r:['leeuw','meeuw','eeuw','schreeuw']},
+  {w:'geit',e:'🐐',r:['meid','tijd','kwijt','spijt','bijt']}
+];
+const ALLE = [...new Set(BANK.flatMap(b=>[b.w,...b.r]))];
+
+/* ---------- rijm ---------- */
+const VOC = 'aeiouyáàâäéèêëíìîïóòôöúùûü';
+const SCHWA = /^e(n|l|r|m|s|nd|ns|nt)?$/;
+function norm(w){return String(w).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z]/g,'')}
+function rijmdeel(w){
+  let s = norm(w); if(!s) return '';
+  s = s.replace(/ij/g,'ei').replace(/au/g,'ou').replace(/y/g,'ie')
+       .replace(/dt$/,'t').replace(/d$/,'t').replace(/b$/,'p').replace(/g$/,'ch');
+  const g = s.match(/[aeiou]+[^aeiou]*/g); if(!g) return s;
+  let last = g[g.length-1];
+  if(g.length>1 && SCHWA.test(last)) last = g[g.length-2]+last;
+  return last.replace(/^i(?=[aou])/,'');
+}
+function rijmt(a,b){const x=rijmdeel(a);return !!x && x===rijmdeel(b) && norm(a)!==norm(b)}
+function splitRijm(word){
+  const re = new RegExp(`[${VOC}]+[^${VOC}]*`,'gi');
+  const g = [...word.matchAll(re)]; if(!g.length) return ['',word];
+  let k = g.length-1; if(k>0 && SCHWA.test(g[k][0].toLowerCase())) k--;
+  return [word.slice(0,g[k].index), word.slice(g[k].index)];
+}
+function hintsVoor(w){return ALLE.filter(x=>rijmt(x,w))}
+
+/* ---------- hulpjes ---------- */
+const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function groepen(schema){const c={};[...schema].forEach(l=>c[l]=(c[l]||0)+1);return [...new Set(schema)].filter(l=>c[l]>1)}
+function kleur(L,gr){const i=gr.indexOf(L);return i<0?'c0':'c'+(i+1)}
+function laatsteWoord(t){const m=t.match(/^([\s\S]*?)([\p{L}\p{M}'’-]+)([^\p{L}\p{M}]*)$/u);return m?{voor:m[1],woord:m[2],na:m[3]}:null}
+function telWoorden(t){return t.trim()?t.trim().split(/\s+/).filter(x=>/[\p{L}\d]/u.test(x)).length:0}
+const isElfje = () => S.form && !S.form.schema;
+
+function schemaHTML(f,verborgen){
+  if(!f.schema) return f.tellen.map(n=>`<span class="${verborgen?'vraagt':'tel'}">${verborgen?'?':n}</span>`).join('');
+  const gr = groepen(f.schema);
+  return [...f.schema].map(L=>verborgen?`<span class="vraagt">?</span>`:`<span class="${kleur(L,gr)}">${L}</span>`).join('');
+}
+
+function schrift(titel, regels, schema, {toon=false, lees=-1, groot=false}={}){
+  const gr = groepen(schema);
+  const lis = regels.map((t,i)=>{
+    const L = schema[i], cls = schema?kleur(L,gr):'';
+    let inner;
+    if(!t.trim()) inner = '<span class="leeg">…</span>';
+    else if(schema){const lw=laatsteWoord(t);inner=lw?`${esc(lw.voor)}<span class="rw ${cls}">${esc(lw.woord)}</span>${esc(lw.na)}`:esc(t)}
+    else inner = esc(t);
+    const rechts = schema?`<span class="letter ${cls}">${L}</span>`:`<span class="letter tel" title="aantal woorden">${telWoorden(t)}</span>`;
+    const rc = lees>=0?(i===lees?'actief':'dim'):'';
+    return `<li class="${rc}"><span class="tekst">${inner}</span>${rechts}</li>`;
+  }).join('');
+  return `<div class="schrift ${toon?'toon':''} ${groot?'groot':''}"><h2>${esc(titel)}</h2><ol>${lis}</ol></div>`;
+}
+
+/* ---------- staat ---------- */
+const S = {scherm:'start', form:null, g:{}, kiesVoor:null, regels:[], voor:[], rw:[], focus:null, titel:'', toon:false, lees:-1,
+           timer:null, tijd:60, tijdOp:false, melding:'', kolomMelding:{}, nieuw:null};
+
+function kiesVorm(id){
+  S.form = FORMS.find(f=>f.id===id);
+  S.g = {};
+  groepen(S.form.schema).forEach(L=>S.g[L]={start:'',emoji:'',woorden:[],hints:[],getoond:0});
+  S.regels = S.form.regels.map(()=>'');
+  S.voor = S.form.regels.map(()=>'');
+  S.rw = S.form.regels.map(()=>'');
+  S.titel=''; S.toon=false; S.lees=-1; S.melding=''; S.kolomMelding={};
+  ga('voorbeeld');
+}
+function ga(scherm){
+  if(scherm!=='jacht') stopTimer();
+  S.scherm=scherm; S.melding=''; S.lees=-1;
+  if(scherm==='kies') S.kiesVoor = Object.keys(S.g).find(L=>!S.g[L].start) || Object.keys(S.g)[0];
+  render(); window.scrollTo({top:0});
+}
+function stopTimer(){if(S.timer){clearInterval(S.timer);S.timer=null}}
+
+/* ---------- schermen ---------- */
+const SCHERMEN = {
+  start(){
+    return `<h1>Kies een soort gedicht</h1>
+    <p class="intro">Elk gedicht rijmt op zijn eigen manier. Welke gaan we vandaag maken?</p>
+    <div class="vormen">${FORMS.map(f=>`
+      <button class="vorm" data-act="vorm" data-id="${f.id}">
+        <div class="schema">${schemaHTML(f)}</div>
+        <h3>${f.naam}</h3><p>${f.kort}</p>
+      </button>`).join('')}</div>
+    <p class="tip">Tip voor de leerkracht: open eerst het voorbeeld en laat de klas zelf ontdekken welke regels rijmen. Daarna gaan jullie samen op rijmwoordenjacht en schrijven jullie een eigen gedicht in dezelfde vorm.</p>`;
+  },
+  voorbeeld(){
+    const f=S.form, el=isElfje();
+    return `<div class="duo">
+      <div>${schrift(f.titel,f.regels,f.schema,{toon:S.toon})}</div>
+      <aside class="paneel">
+        <div class="label">Gedichtvorm</div>
+        <h2>${f.naam}</h2>
+        <div class="schema groot">${schemaHTML(f,!S.toon)}</div>
+        <p class="vraag">${S.toon?esc(f.uitleg):(el?'Lees het gedicht samen. Tel de woorden op elke regel. Zie je iets?':'Lees het gedicht samen. Welke woorden rijmen op elkaar?')}</p>
+        <div class="knoppen">
+          <button class="knop" data-act="toon">${S.toon?(el?'Verberg de telling':'Verberg het rijm'):(el?'Tel de woorden':'Laat het rijm zien')}</button>
+        </div>
+        <div class="knoppen">
+          <button class="knop hoofd" data-act="naJacht">${el?'Zelf een elfje maken':'Op rijmwoordenjacht!'}</button>
+        </div>
+      </aside></div>
+      <div class="verder"><button class="knop" data-act="terug">← Andere vorm</button></div>`;
+  },
+  kies(){
+    const Ls=Object.keys(S.g), twee=Ls.length>1;
+    const gekozen = Ls.map(L=>norm(S.g[L].start));
+    const alles = Ls.every(L=>S.g[L].start);
+    return `<h1>${twee?'Kies twee startwoorden':'Kies een startwoord'}</h1>
+    <p class="intro">${twee?'Woord A en woord B moeten anders klinken. Op allebei gaan we rijmwoorden zoeken.':'Op dit woord gaan we zoveel mogelijk rijmwoorden zoeken.'}</p>
+    <div class="slots">${Ls.map((L,i)=>{const g=S.g[L],c='c'+(i+1);return `
+      <button class="slot ${c} ${S.kiesVoor===L?'actief':''}" data-act="slot" data-l="${L}">
+        <span class="letter ${c}">${L}</span>
+        <span class="woord ${g.start?'':'leeg'}">${g.start?`${g.emoji?g.emoji+' ':''}${esc(g.start)}`:(S.kiesVoor===L?'Tik hieronder een woord aan':'Nog kiezen')}</span>
+      </button>`}).join('')}</div>
+    <div class="melding" role="status">${esc(S.melding)}</div>
+    <div class="woordkeuze">${BANK.map(b=>{const i=gekozen.indexOf(norm(b.w));return `
+      <button class="wk ${i>=0?'gekozen c'+(i+1):''}" data-act="wk" data-w="${b.w}"><span class="em">${b.e}</span>${b.w}</button>`}).join('')}</div>
+    <form class="eigen" data-form="eigen">
+      <input class="veldin" id="eigenwoord" placeholder="Of typ een eigen woord…" autocomplete="off">
+      <button class="knop">Gebruik dit woord</button>
+    </form>
+    <div class="verder">
+      <button class="knop" data-act="terug">← Terug</button>
+      <div class="knoppen">
+        <button class="knop" data-act="verras">Verras me</button>
+        <button class="knop hoofd" data-act="startJacht" ${alles?'':'disabled'}>Start de jacht!</button>
+      </div>
+    </div>`;
+  },
+  jacht(){
+    const Ls=Object.keys(S.g);
+    const m=Math.floor(S.tijd/60), s=String(S.tijd%60).padStart(2,'0');
+    const totaal = Ls.reduce((n,L)=>n+S.g[L].woorden.filter(w=>w.ok).length,0);
+    const kol = Ls.map((L,i)=>{
+      const g=S.g[L], c='c'+(i+1), ok=g.woorden.filter(w=>w.ok).length;
+      const bub = g.woorden.map((w,j)=>{
+        const nieuw = S.nieuw && S.nieuw.L===L && S.nieuw.j===j ? 'nieuw':'';
+        if(w.ok){const [a,b]=splitRijm(w.w);return `<span class="bubbel ${nieuw}">${esc(a)}<span class="rijm">${esc(b)}</span><button class="x" data-act="weg" data-l="${L}" data-j="${j}" aria-label="Haal ${esc(w.w)} weg">×</button></span>`}
+        return `<span class="bubbel twijfel ${nieuw}">${esc(w.w)} <em>Rijmt dit?</em><button class="mini ja" data-act="ja" data-l="${L}" data-j="${j}">Ja</button><button class="mini" data-act="weg" data-l="${L}" data-j="${j}">Nee</button></span>`;
+      }).join('') || `<span class="leeg">Nog geen rijmwoorden…</span>`;
+      const zichtbaar = g.hints.slice(0,g.getoond).filter(h=>!g.woorden.some(w=>norm(w.w)===norm(h)));
+      return `<section class="kolom ${c}">
+        <div class="startwoord">${g.emoji?`<span class="em">${g.emoji}</span>`:''}<span>${esc(g.start)}</span><span class="letter ${c}">${L}</span></div>
+        <form class="jachtform" data-form="jacht" data-l="${L}">
+          <input class="veldin" id="in-${L}" placeholder="Wat rijmt op ${esc(g.start)}?" autocomplete="off" autocapitalize="off">
+          <button class="knop">Erbij!</button>
+        </form>
+        <p class="melding" role="status">${esc(S.kolomMelding[L]||'')}</p>
+        <div class="bubbels">${bub}</div>
+        <div class="voet">
+          <span class="teller"><b>${ok}</b> ${ok===1?'rijmwoord':'rijmwoorden'}</span>
+          <span class="spacer"></span>
+          ${g.hints.length?`<button class="knop klein" data-act="hint" data-l="${L}" ${g.getoond>=g.hints.length?'disabled':''}>Hulpwoord</button>`:''}
+        </div>
+        ${zichtbaar.length?`<div class="hints">${zichtbaar.map(h=>`<button class="hint" data-act="hintErbij" data-l="${L}" data-w="${esc(h)}">${esc(h)}</button>`).join('')}</div>`:''}
+      </section>`;
+    }).join('');
+    return `<div class="jachtkop">
+        <h1>Rijmwoordenjacht!</h1><span class="spacer"></span>
+        <span class="klok ${S.timer?'loopt':''} ${S.tijdOp?'op':''}" id="klok">${m}:${s}</span>
+        <button class="knop" data-act="timer">${S.timer?'Stop de tijd':(S.tijdOp||S.tijd<60?'Opnieuw: 1 minuut':'Start 1 minuut')}</button>
+      </div>
+      <p class="intro">Wie weet een rijmwoord? Steek je vinger op! De leerkracht typt het in.</p>
+      ${S.tijdOp?`<div class="banner" role="status">De tijd is om! We vonden samen ${totaal} rijmwoorden.</div>`:''}
+      <div class="kolommen">${kol}</div>
+      <div class="verder">
+        <button class="knop" data-act="terug">← Andere startwoorden</button>
+        <button class="knop hoofd" data-act="naBouw">Gedicht schrijven →</button>
+      </div>`;
+  },
+  bouw(){
+    const f=S.form, el=isElfje(), gr=groepen(f.schema);
+    const rijen = S.voor.map((v,i)=>{
+      const L=f.schema[i], cls=el?'':kleur(L,gr), g=!el&&S.g[L];
+      const tag = el?`<span class="letter tel zichtbaar">${f.tellen[i]}</span>`:`<span class="letter zichtbaar ${cls}">${L}</span>`;
+      const starters = el ? '' : `<div class="starters">Zinsbegin: ${startersVoor(i).map(s=>`<button class="sbtn" data-act="starter" data-i="${i}" data-w="${esc(s)}">${esc(s)}…</button>`).join('')}</div>`;
+      let inhoud;
+      if(g && !S.rw[i]){
+        const gebruikt = S.rw.filter((r,k)=>k!==i && r && f.schema[k]===L).map(norm);
+        const opties = [g.start,...g.woorden.filter(w=>w.ok).map(w=>w.w)];
+        inhoud = `<p class="opdracht">Regel ${i+1}: kies samen een rijmwoord voor het eind.</p>
+          <div class="chips">${opties.map(w=>`<button class="rchip" data-act="kiesRw" data-i="${i}" data-w="${esc(w)}" ${gebruikt.includes(norm(w))?'disabled title="Al gebruikt"':''}>${esc(w)}</button>`).join('')}</div>
+          <form class="eigen klein" data-form="eigenrw" data-i="${i}"><input class="veldin" id="erw-${i}" placeholder="Of een ander rijmwoord…" autocomplete="off"><button class="knop klein">Kies</button></form>`;
+      } else if(g){
+        inhoud = `<div class="zinrij">
+            <input class="veldin" id="v-${i}" value="${esc(v)}" placeholder="Wat komt er vóór ‘${esc(S.rw[i])}’?" autocomplete="off">
+            <span class="vastwoord">${esc(S.rw[i])}<button class="x" data-act="rwWeg" data-i="${i}" aria-label="Kies een ander rijmwoord" title="Ander rijmwoord">×</button></span>
+          </div>${starters}<div class="status" id="st-${i}">${statusHTML(i)}</div>`;
+      } else {
+        inhoud = `<input class="veldin" id="v-${i}" value="${esc(v)}" placeholder="${el?esc(f.tips[i]):'Regel '+(i+1)+': deze regel hoeft niet te rijmen'}" autocomplete="off">
+          ${starters}<div class="status" id="st-${i}">${statusHTML(i)}</div>`;
+      }
+      return `<div class="bouwregel ${cls}">${tag}<div>${inhoud}</div></div>`;
+    }).join('');
+    const werkwijze = el
+      ? `<div class="werkwijze"><b>Zo werkt het</b><ol><li>Bedenk samen de woorden voor een regel.</li><li>Tel hardop mee op je vingers.</li><li>Typ wat de klas bedenkt. Het hoeft niet te rijmen.</li></ol></div>`
+      : `<div class="werkwijze"><b>Zo werkt het: we dichten achterstevoren</b><ol><li>Kies samen een rijmwoord voor het eind van de regel.</li><li>Vraag de klas: wat komt ervoor?</li><li>Typ wat de kinderen bedenken. Blijft het stil? Tik op een zinsbegin.</li></ol></div>`;
+    return `<h1>${el?'Schrijf een elfje':'Schrijf ons gedicht'}</h1>
+      ${werkwijze}
+      <div class="titelrij"><label for="titel">Titel</label><input class="veldin" id="titel" value="${esc(S.titel)}" placeholder="Ons gedicht" autocomplete="off"></div>
+      <div class="bouw">${rijen}</div>
+      <div class="verder">
+        <button class="knop" data-act="terug">← ${el?'Terug naar het voorbeeld':'Terug naar de jacht'}</button>
+        <button class="knop hoofd" data-act="naGedicht">Bekijk ons gedicht</button>
+      </div>`;
+  },
+  gedicht(){
+    const f=S.form, n=S.regels.length;
+    const lezen = S.lees>=0
+      ? `<button class="knop" data-act="vorige" ${S.lees===0?'disabled':''}>← Vorige regel</button>
+         <button class="knop hoofd" data-act="volgende">${S.lees===n-1?'Klaar!':'Volgende regel →'}</button>`
+      : `<button class="knop hoofd" data-act="lees">Samen voorlezen, regel voor regel</button>`;
+    return `${schrift(S.titel.trim()||'Ons gedicht', S.regels, f.schema, {toon:true, lees:S.lees, groot:true})}
+      <div class="lezen">${lezen}</div>
+      <div class="verder">
+        <button class="knop" data-act="terug">← Aanpassen</button>
+        <div class="knoppen">
+          <button class="knop" data-act="zelfdeVorm">Nog een ${esc(f.naam.toLowerCase())}</button>
+          <button class="knop" data-act="home">Andere vorm</button>
+        </div>
+      </div>`;
+  }
+};
+
+const STARTERS=['Er woonde eens','Op een dag','In de nacht','Toen kwam er','Ik zag een','En toen','Maar','Heel stil'];
+function startersVoor(i){return [0,1,2].map(k=>STARTERS[(i*3+k)%STARTERS.length])}
+function regelTekst(i){const v=(S.voor[i]||'').trim(), r=S.rw[i]||'';return r?(v?v+' '+r:r):v}
+function sync(){S.regels=S.voor.map((_,i)=>regelTekst(i))}
+
+function statusHTML(i){
+  const f=S.form, t=regelTekst(i);
+  if(!isElfje()){
+    const L=f.schema[i], g=S.g[L];
+    if(!g) return t?'':'Deze regel hoeft niet te rijmen. Bedenk samen een hele zin.';
+    const r=S.rw[i]; if(!r) return '';
+    const past = norm(r)===norm(g.start) || rijmt(r,g.start) || g.woorden.some(x=>x.ok && norm(x.w)===norm(r));
+    const let_op = past?'':` <b>Let op:</b> ${esc(r)} rijmt niet op ${esc(g.start)}.`;
+    if(!(S.voor[i]||'').trim()) return `Vraag de klas: wat komt er vóór <b>${esc(r)}</b>?${let_op}`;
+    return `<span class="status goed" style="margin:0">✓ ${esc(t)}</span>${let_op}`;
+  }
+  const n=telWoorden(t), doel=f.tellen[i];
+  if(!n) return `Nog leeg`;
+  if(n===doel) return `<span class="goed tel status" style="margin:0">✓ ${n} van ${doel} ${doel===1?'woord':'woorden'}</span>`;
+  return `${n} van ${doel} ${doel===1?'woord':'woorden'}: ${n<doel?'er mag nog wat bij':'dat is te veel'}`;
+}
+
+/* ---------- balk ---------- */
+function renderBar(){
+  let crumbs='';
+  if(S.form){
+    const stappen = isElfje()
+      ? [['voorbeeld','Voorbeeld'],['bouw','Schrijven'],['gedicht','Gedicht']]
+      : [['voorbeeld','Voorbeeld'],['kies','Startwoorden'],['jacht','Jacht'],['bouw','Schrijven'],['gedicht','Gedicht']];
+    crumbs = `<nav class="crumbs" aria-label="Stappen"><span>${esc(S.form.naam)}</span>${stappen.map(([k,n])=>`<span class="pijl">›</span><span class="${S.scherm===k?'nu':''}">${n}</span>`).join('')}</nav>`;
+  }
+  document.getElementById('bar').innerHTML =
+    `<button class="logo" data-act="home"><span class="a">Rijm</span>woorden<span class="b">jacht</span></button>${crumbs}<span class="spacer"></span><button class="knop klein" data-act="scherm">Volledig scherm</button>`;
+}
+
+function render(){
+  const a=document.activeElement, id=a&&a.id, pos=a&&a.selectionStart;
+  document.getElementById('main').innerHTML = SCHERMEN[S.scherm]();
+  renderBar();
+  S.nieuw=null;
+  if(S.focus){const el=document.getElementById(S.focus);S.focus=null;if(el){el.focus();const n=el.value.length;try{el.setSelectionRange(n,n)}catch(e){}}return}
+  if(id){const el=document.getElementById(id);if(el){el.focus();try{if(pos!=null)el.setSelectionRange(pos,pos)}catch(e){}}}
+}
+
+/* ---------- acties ---------- */
+function kiesWoord(w, emoji){
+  const L=S.kiesVoor; if(!L) return;
+  w=w.trim().toLowerCase(); if(!norm(w)) return;
+  for(const K of Object.keys(S.g)){
+    if(K===L) continue; const o=S.g[K].start;
+    if(o && (norm(o)===norm(w) || rijmdeel(o)===rijmdeel(w))){S.melding=`${w} rijmt op ${o}. Kies voor ${L} een woord dat anders klinkt.`;render();return}
+  }
+  const b=BANK.find(x=>norm(x.w)===norm(w));
+  Object.assign(S.g[L],{start:w,emoji:emoji||(b?b.e:''),woorden:[],hints:shuffle(hintsVoor(w)),getoond:0});
+  S.melding='';
+  S.kiesVoor = Object.keys(S.g).find(K=>!S.g[K].start) || L;
+  render();
+}
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function voegToe(L, w){
+  const g=S.g[L]; w=w.trim().toLowerCase(); if(!norm(w)) return;
+  if(norm(w)===norm(g.start)){S.kolomMelding[L]=`Dat is het startwoord zelf!`;render();return}
+  if(g.woorden.some(x=>norm(x.w)===norm(w))){S.kolomMelding[L]=`${w} hebben we al!`;render();return}
+  const ok = rijmt(w,g.start);
+  g.woorden.push({w,ok});
+  S.nieuw={L,j:g.woorden.length-1};
+  S.kolomMelding[L] = ok ? `Goed zo! ${w} rijmt op ${g.start}.` : `Hmm… rijmt ${w} op ${g.start}? Wat denkt de klas?`;
+  render();
+}
+
+function kiesRijmwoord(i,w){
+  w=String(w).trim().toLowerCase(); if(!norm(w)) return;
+  S.rw[i]=w; sync(); S.focus='v-'+i; render();
+}
+function zetStarter(i,s){
+  const v=(S.voor[i]||'').trim();
+  S.voor[i] = v ? v+' '+s.toLowerCase() : s;
+  sync();
+  const el=document.getElementById('v-'+i); el.value=S.voor[i]+' ';
+  S.voor[i]=el.value;
+  document.getElementById('st-'+i).innerHTML=statusHTML(i);
+  el.focus(); const n=el.value.length; try{el.setSelectionRange(n,n)}catch(e){}
+}
+
+function startTimer(){
+  stopTimer(); S.tijd=60; S.tijdOp=false;
+  S.timer=setInterval(()=>{
+    S.tijd--;
+    const k=document.getElementById('klok');
+    if(k) k.textContent=`${Math.floor(S.tijd/60)}:${String(S.tijd%60).padStart(2,'0')}`;
+    if(S.tijd<=0){stopTimer();S.tijdOp=true;if(S.scherm==='jacht')render()}
+  },1000);
+  render();
+}
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]'); if(!b||b.disabled) return;
+  const d=b.dataset, act=d.act;
+  switch(act){
+    case 'home': stopTimer(); S.form=null; ga('start'); break;
+    case 'scherm': {
+      const el=document.documentElement;
+      try{ if(document.fullscreenElement) document.exitFullscreen?.().catch(()=>{}); else el.requestFullscreen?.().catch(()=>{}); }catch(err){}
+      break; }
+    case 'vorm': kiesVorm(d.id); break;
+    case 'toon': S.toon=!S.toon; render(); break;
+    case 'naJacht': ga(isElfje()?'bouw':(Object.values(S.g).every(g=>g.start)?'jacht':'kies')); break;
+    case 'terug': {
+      const terug={voorbeeld:'start',kies:'voorbeeld',jacht:'kies',bouw:isElfje()?'voorbeeld':'jacht',gedicht:'bouw'}[S.scherm];
+      if(terug==='start'){S.form=null} ga(terug); break; }
+    case 'slot': S.kiesVoor=d.l; S.melding=''; render(); break;
+    case 'wk': kiesWoord(d.w); break;
+    case 'verras': {
+      const Ls=Object.keys(S.g);
+      for(const L of Ls){
+        S.kiesVoor=L;
+        const andere=Ls.filter(K=>K!==L).map(K=>S.g[K].start).filter(Boolean);
+        const opties=BANK.filter(x=>!andere.some(o=>rijmdeel(o)===rijmdeel(x.w)) && norm(x.w)!==norm(S.g[L].start));
+        const p=opties[Math.floor(Math.random()*opties.length)];
+        S.g[L].start=''; kiesWoord(p.w,p.e);
+      }
+      S.kiesVoor=Ls[0]; render(); break; }
+    case 'startJacht': S.tijd=60; S.tijdOp=false; S.kolomMelding={}; ga('jacht'); break;
+    case 'timer': if(S.timer){stopTimer();render()} else startTimer(); break;
+    case 'ja': S.g[d.l].woorden[+d.j].ok=true; S.kolomMelding[d.l]=`Afgesproken: ${S.g[d.l].woorden[+d.j].w} telt mee!`; render(); break;
+    case 'weg': S.g[d.l].woorden.splice(+d.j,1); S.kolomMelding[d.l]=''; render(); break;
+    case 'hint': S.g[d.l].getoond++; render(); break;
+    case 'hintErbij': voegToe(d.l,d.w); break;
+    case 'naBouw': ga('bouw'); break;
+    case 'kiesRw': kiesRijmwoord(+d.i,d.w); break;
+    case 'rwWeg': S.rw[+d.i]=''; sync(); render(); break;
+    case 'starter': zetStarter(+d.i,d.w); break;
+    case 'naGedicht': sync(); ga('gedicht'); break;
+    case 'lees': S.lees=0; render(); break;
+    case 'vorige': S.lees=Math.max(0,S.lees-1); render(); break;
+    case 'volgende': S.lees = S.lees>=S.regels.length-1 ? -1 : S.lees+1; render(); break;
+    case 'zelfdeVorm': kiesVorm(S.form.id); ga(isElfje()?'bouw':'kies'); break;
+  }
+});
+
+document.addEventListener('submit',e=>{
+  const f=e.target; e.preventDefault();
+  if(f.dataset.form==='eigen'){const i=document.getElementById('eigenwoord');const w=i.value;i.value='';kiesWoord(w)}
+  if(f.dataset.form==='eigenrw'){const i=+f.dataset.i;kiesRijmwoord(i,document.getElementById('erw-'+i).value)}
+  if(f.dataset.form==='jacht'){const L=f.dataset.l,i=document.getElementById('in-'+L);const w=i.value;i.value='';voegToe(L,w)}
+});
+
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.id==='titel') S.titel=t.value;
+  const m=t.id.match(/^v-(\d+)$/);
+  if(m){const i=+m[1];S.voor[i]=t.value;sync();document.getElementById('st-'+i).innerHTML=statusHTML(i)}
+});
+
+render();
+</script>
+</body>
+</html>
